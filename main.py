@@ -7,10 +7,10 @@ import parse_html
 import random
 from slackclient import SlackClient
 # instantiate Slack client
-token = "xoxp-546563412947-546067411265-545936603472-15d20cf854ca990d813a1250d57d0afa"
+token = "your_token"
 slack_client = SlackClient(token)
 # starterbot's user ID in Slack: value is assigned after the bot starts up
-pjeulerbot_id = 'UG21ZC37T'
+pjeulerbot_id = 'your_id'
 
 # constants
 RTM_READ_DELAY = 1 # 1 second delay between reading from RTM
