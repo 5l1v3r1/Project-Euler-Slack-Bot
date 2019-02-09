@@ -3,14 +3,14 @@ import re
 import pdfkit
 import json
 import requests
+import parse_html
+import random
 from slackclient import SlackClient
-
-#EDIT THIS
-token = "your_token"
-pjeulerbot_id = 'your_id'
-#END OF EDIT
-
+# instantiate Slack client
+token = "xoxp-546563412947-546067411265-545936603472-15d20cf854ca990d813a1250d57d0afa"
 slack_client = SlackClient(token)
+# starterbot's user ID in Slack: value is assigned after the bot starts up
+pjeulerbot_id = 'UG21ZC37T'
 
 # constants
 RTM_READ_DELAY = 1 # 1 second delay between reading from RTM
@@ -52,7 +52,7 @@ def channel_id_to_name(channel_id):
 
 def reply_file(file_name, channel):
 	global token
-	print channel
+	#print channel
 	my_file = {
 		'file' : (file_name, open(file_name, 'rb'), 'pdf')
 	}
@@ -60,25 +60,47 @@ def reply_file(file_name, channel):
 		"filename": file_name,
 		"token":token,
 		"title":"Project Euler Challenge " + file_name.split('.')[0],
-		"channels":[channel]
+		"channels":[channel],
+		"initial_comment": "```Url : " + "https://projecteuler.net/problem=" + file_name.split('.')[0] + "```"
 	}
-	print payloads
+	#print payloads
 	r = requests.post("https://slack.com/api/files.upload", params=payloads, files=my_file)
-	print r.content
+	#print r.content
 
 def handle_command(command, channel):
 	"""
 		Executes bot command if the command is known
+			!get number : get specific project euler challenge with number provided
+			!rand : get random project euler challenge
 	"""
     # This is where you start to implement more commands!
-    # If it's DM => Ignore.
 	try:
-		channel = channel_id_to_name(channel)
+		channel = channel_id_to_name(channel)     # If it's DM => Ignore.
 	except:
 		pass
-	if command.startswith('.rand'):
+	if command.startswith('!get'):
+		try:
+			command.split()[1] #If len(command.split() < 2) => Ignore.
+			assert command.split()[1] < 655 #check to see if given number < max_num = 655
+		except:
+			pass
 		file_name = command.split()[1] + '.pdf'
-		pdfkit.from_url('https://projecteuler.net/problem=' + command.split()[1], file_name)
+		url_content = parse_html.parse_url('https://projecteuler.net/problem=' + command.split()[1])
+		with open('tmp.html', 'wb') as f:
+			f.write(url_content)
+		pdfkit.from_file('tmp.html', file_name)
+		reply_file(file_name, channel)
+	elif command.startswith('!rand'):
+		try:
+			assert len(command.split()) == 1
+		except:
+			pass
+		num = str(random.randint(1, 655))
+		file_name = num + '.pdf'
+		url_content = parse_html.parse_url('https://projecteuler.net/problem=' + num)
+		with open('tmp.html', 'wb') as f:
+			f.write(url_content)
+		pdfkit.from_file('tmp.html', file_name)
 		reply_file(file_name, channel)
 
 if __name__ == "__main__":
