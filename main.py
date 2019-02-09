@@ -10,7 +10,7 @@ from slackclient import SlackClient
 token = "your_token"
 slack_client = SlackClient(token)
 # starterbot's user ID in Slack: value is assigned after the bot starts up
-pjeulerbot_id = 'your_id'
+pjeulerbot_id = "your_id"
 
 # constants
 RTM_READ_DELAY = 1 # 1 second delay between reading from RTM
@@ -52,6 +52,8 @@ def channel_id_to_name(channel_id):
 
 def reply_file(file_name, channel):
 	global token
+	url = "https://projecteuler.net/problem=" + file_name.split('.')[0]
+	challenge_name = parse_html.get_challenge_name(url)
 	#print channel
 	my_file = {
 		'file' : (file_name, open(file_name, 'rb'), 'pdf')
@@ -61,7 +63,7 @@ def reply_file(file_name, channel):
 		"token":token,
 		"title":"Project Euler Challenge " + file_name.split('.')[0],
 		"channels":[channel],
-		"initial_comment": "```Url : " + "https://projecteuler.net/problem=" + file_name.split('.')[0] + "```"
+		"initial_comment": "```Url : " + url +"\nName : " + challenge_name + "```"
 	}
 	#print payloads
 	r = requests.post("https://slack.com/api/files.upload", params=payloads, files=my_file)
@@ -85,7 +87,8 @@ def handle_command(command, channel):
 		except:
 			pass
 		file_name = command.split()[1] + '.pdf'
-		url_content = parse_html.parse_url('https://projecteuler.net/problem=' + command.split()[1])
+		url = 'https://projecteuler.net/problem=' + command.split()[1]
+		url_content = parse_html.parse_url(url)
 		with open('tmp.html', 'wb') as f:
 			f.write(url_content)
 		pdfkit.from_file('tmp.html', file_name)
@@ -97,7 +100,8 @@ def handle_command(command, channel):
 			pass
 		num = str(random.randint(1, 655))
 		file_name = num + '.pdf'
-		url_content = parse_html.parse_url('https://projecteuler.net/problem=' + num)
+		url = 'https://projecteuler.net/problem=' + num
+		url_content = parse_html.parse_url(url)
 		with open('tmp.html', 'wb') as f:
 			f.write(url_content)
 		pdfkit.from_file('tmp.html', file_name)
