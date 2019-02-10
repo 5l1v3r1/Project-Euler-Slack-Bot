@@ -5,17 +5,19 @@ import json
 import requests
 import parse_html
 import random
+import os
 from slackclient import SlackClient
 # instantiate Slack client
-token = "your_token"
+token = "xoxp-546563412947-546067411265-546008836160-e6209a7768d59c6b71bcc7ac81f82241"
 slack_client = SlackClient(token)
 # starterbot's user ID in Slack: value is assigned after the bot starts up
-pjeulerbot_id = "your_id"
+pjeulerbot_id = 'UG21ZC37T'
 
 # constants
 RTM_READ_DELAY = 1 # 1 second delay between reading from RTM
 #EXAMPLE_COMMAND = "do"
 MENTION_REGEX = "^<@(|[WU].+?)>(.*)"
+MAX_CHALLENGE_NUM = 645
 
 def parse_bot_commands(slack_events):
     """
@@ -53,7 +55,6 @@ def channel_id_to_name(channel_id):
 def reply_file(file_name, channel):
 	global token
 	url = "https://projecteuler.net/problem=" + file_name.split('.')[0]
-	challenge_name = parse_html.get_challenge_name(url)
 	#print channel
 	my_file = {
 		'file' : (file_name, open(file_name, 'rb'), 'pdf')
@@ -61,13 +62,20 @@ def reply_file(file_name, channel):
 	payloads = {
 		"filename": file_name,
 		"token":token,
-		"title":"Project Euler Challenge " + file_name.split('.')[0],
+		"title":"Project Euler Problem " + file_name.split('.')[0],
 		"channels":[channel],
-		"initial_comment": "```Url : " + url +"\nName : " + challenge_name + "```"
+		"initial_comment": "```Url : " + url + "```"
 	}
 	#print payloads
 	r = requests.post("https://slack.com/api/files.upload", params=payloads, files=my_file)
 	#print r.content
+
+def check_valid_num(num):
+	try:
+		int(num)
+		return True
+	except:
+		return False
 
 def handle_command(command, channel):
 	"""
@@ -80,32 +88,30 @@ def handle_command(command, channel):
 		channel = channel_id_to_name(channel)     # If it's DM => Ignore.
 	except:
 		pass
-	if command.startswith('!get'):
-		try:
-			command.split()[1] #If len(command.split() < 2) => Ignore.
-			assert command.split()[1] < 655 #check to see if given number < max_num = 655
-		except:
-			pass
+	if command.startswith('!get') and len(command.split()) == 2 and check_valid_num(command.split()[1]) == True and int(command.split()[1]) <= MAX_CHALLENGE_NUM:
+		print command
 		file_name = command.split()[1] + '.pdf'
 		url = 'https://projecteuler.net/problem=' + command.split()[1]
 		url_content = parse_html.parse_url(url)
-		with open('tmp.html', 'wb') as f:
-			f.write(url_content)
-		pdfkit.from_file('tmp.html', file_name)
+		#with open('tmp.html', 'wb') as f:
+		#	f.write(url_content)
+		#pdfkit.from_file('tmp.html', file_name)
 		reply_file(file_name, channel)
+		os.remove(file_name)
 	elif command.startswith('!rand'):
 		try:
 			assert len(command.split()) == 1
 		except:
 			pass
-		num = str(random.randint(1, 655))
+		num = str(random.randint(1, MAX_CHALLENGE_NUM))
 		file_name = num + '.pdf'
 		url = 'https://projecteuler.net/problem=' + num
 		url_content = parse_html.parse_url(url)
-		with open('tmp.html', 'wb') as f:
-			f.write(url_content)
-		pdfkit.from_file('tmp.html', file_name)
+		#with open('tmp.html', 'wb') as f:
+		#	f.write(url_content)
+		#pdfkit.from_file('tmp.html', file_name)
 		reply_file(file_name, channel)
+		os.remove(file_name)
 
 if __name__ == "__main__":
     if slack_client.rtm_connect(with_team_state=False):
